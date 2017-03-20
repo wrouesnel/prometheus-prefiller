@@ -1,0 +1,93 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "zzAqZQJzeDNhyZPmjjbJCUh0w4U=",
+			"path": "github.com/alecthomas/gometalinter",
+			"revision": "82f72134567748fc07fc15b4bb3eaafb7765a20e",
+			"revisionTime": "2017-03-20T11:24:09Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "fCc3grA7vIxfBru7R3SqjcW+oLI=",
+			"path": "github.com/alecthomas/units",
+			"revision": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a",
+			"revisionTime": "2015-10-22T06:55:26Z"
+		},
+		{
+			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "346938d642f2ec3594ed81d874461961cd0faa76",
+			"revisionTime": "2016-10-29T20:57:26Z"
+		},
+		{
+			"checksumSHA1": "e/Kc2UOy1lKAy31xWlK37M1r2e8=",
+			"path": "github.com/google/shlex",
+			"revision": "6f45313302b9c56850fc17f99e40caebce98c716",
+			"revisionTime": "2015-01-27T13:39:51Z"
+		},
+		{
+			"checksumSHA1": "uEc9/1HbYGeK7wPStF6FmUlfzGE=",
+			"path": "github.com/nicksnyder/go-i18n/i18n",
+			"revision": "be79775dc0d732144a0948d056c678bc653293bb",
+			"revisionTime": "2017-03-19T19:51:18Z"
+		},
+		{
+			"checksumSHA1": "Yw9gEiPWV24K0SJIUHEbZyGDC80=",
+			"path": "github.com/nicksnyder/go-i18n/i18n/bundle",
+			"revision": "be79775dc0d732144a0948d056c678bc653293bb",
+			"revisionTime": "2017-03-19T19:51:18Z"
+		},
+		{
+			"checksumSHA1": "+XOg99I1zdmBRUb04ZswvzQ2WS0=",
+			"path": "github.com/nicksnyder/go-i18n/i18n/language",
+			"revision": "be79775dc0d732144a0948d056c678bc653293bb",
+			"revisionTime": "2017-03-19T19:51:18Z"
+		},
+		{
+			"checksumSHA1": "WZOU406In2hs8FJOHWqV8PWkJKs=",
+			"path": "github.com/nicksnyder/go-i18n/i18n/translation",
+			"revision": "be79775dc0d732144a0948d056c678bc653293bb",
+			"revisionTime": "2017-03-19T19:51:18Z"
+		},
+		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
+			"checksumSHA1": "JXUVA1jky8ZX8w09p2t5KLs97Nc=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
+			"revisionTime": "2017-01-30T11:31:45Z"
+		},
+		{
+			"checksumSHA1": "ih4CCYD19rjjF9fjid+l7w/+cIg=",
+			"path": "github.com/wadey/gocovmerge",
+			"revision": "b5bfa59ec0adc420475f97f89b58045c721d761c",
+			"revisionTime": "2016-03-31T18:18:00Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "O5eYI3n1WdaC30AxQjETe3dAQHU=",
+			"path": "golang.org/x/tools/cover",
+			"revision": "2946dd1f77e693e136d9ed202ba093bb4a3ea761",
+			"revisionTime": "2017-03-15T22:55:52Z"
+		},
+		{
+			"checksumSHA1": "e7/OahiWYu5diGryRRFfQ8iEiD4=",
+			"path": "gopkg.in/alecthomas/kingpin.v3-unstable",
+			"revision": "22f17ee77286a1823c3ad4377ac305ef2a81538d",
+			"revisionTime": "2017-03-20T02:00:56Z"
+		},
+		{
+			"checksumSHA1": "0KwOlQV1dNUh9X8t+5s7nX5bqfk=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "a3f3340b5840cee44f372bddb5880fcbc419b46a",
+			"revisionTime": "2017-02-08T14:18:51Z"
+		}
+	],
+	"rootPath": "github.com/wrouesnel/prometheus-prefiller/tools"
+}

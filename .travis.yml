@@ -1,0 +1,17 @@
+language: go
+go:
+- '1.8'
+before_install:
+- go get -v github.com/mattn/goveralls
+script:
+- make all
+- "$HOME/gopath/bin/goveralls -coverprofile=cover.out -service=travis-ci"
+deploy:
+  skip_cleanup: true
+  provider: releases
+  api_key:
+    secure: gdm6LDCf02hmOWqtpXm2D7oHX3SiHkb/f+nLgv2B4+tWIp/M4On/5Wl5KlRDRASbjgo4PwDb1fJZl8wgM59f/N2HpbMLFXzH/vlqkZtiGVBSB4Mg8RvFzURqQ+H5H5ijxYjm0AMUD17bfk2KePCGq9GNJRgvGTlxDOTQv2zjrpM8S0nmjhAyaI9Lz8xOMIsp36R1ChVRxaGCqX/BCBI7g5xgNFnuNaKKFxBUWsu1eJM413ZAwj4Ni7WcJ2sCWiUuHp+FBXjB2gup9x3OsqEogDtT+21HZtV6m4mlNlVJBr4PPdUBbflUg1o/mOFEr3gvxLg9lITpkIBPZ6HpMr2sbjJN6B6NowSXTZmIHluJCUsWMdMgTwhbB5W9vU/gORU8N3hAcgO5/mTIVillYSwwf2dj91mIHQnWgM5rzx2AXTKGs4gwMhj85eLXm+9xaOSV1PuPvfDJhQbFhQYaublLoYBW8ncfIQVmnPsVK4NdLDIe6rWkclZssADq4FrnvfVb6tK166nqOTdtWfgOs4lBTjri8k1X7dCI4N0UXjBC0cyUsJziAxzbI+nZ4U890A0zJvicaGC00SiVl2fqQ+3NyJNQG9j1WQG79Yqc09LdWEmIdalFYRVd3WqiSGoh+SR4A/l2erjJIU03sfzP+Nf+ZlNPeeLFpTYMkhDA/cU2gc8=
+  file: prometheus-prefiller
+  on:
+    repo: wrouesnel/prometheus-prefiller
+    tags: true
