@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/prometheus/prometheus/storage/local"
+	"github.com/wrouesnel/prometheus-prefiller/local"
 
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/log"
@@ -24,32 +24,12 @@ func main() {
 }
 
 func realMain() int {
-	cfgMemoryStorage := local.MemorySeriesStorageOptions{
-		MemoryChunks:       1024,
-		MaxChunksToPersist: 1024,
-		//PersistenceStoragePath:
-		//PersistenceRetentionPeriod:
-		//CheckpointInterval:         time.Minute*30,
-		//CheckpointDirtySeriesLimit: 10000,
-		Dirty:          true,
-		PedanticChecks: true,
-		SyncStrategy:   local.Always,
-	}
-
-	// Number of bytes to read before doing a sample append (approx)
-	var ingestionBuffer int
 
 	app := kingpin.New("prometheus-prefill", "command line utility to manually fill a prometheus data store")
 	app.Version(Version)
 
-	app.Flag("storage.path", "Directory path to create and fill the data store under.").Default("data").StringVar(&cfgMemoryStorage.PersistenceStoragePath)
-	app.Flag("storage.retention-period", "Period of time to store data for").Default("360h").DurationVar(&cfgMemoryStorage.PersistenceRetentionPeriod)
-
-	app.Flag("storage.checkpoint-interval", "Period of time to store data for").Default("30m").DurationVar(&cfgMemoryStorage.CheckpointInterval)
-	app.Flag("storage.checkpoint-dirty-series-limit", "Period of time to store data for").Default("10000").IntVar(&cfgMemoryStorage.CheckpointDirtySeriesLimit)
-
-	app.Flag("prefiller.buffer-size", "Amount of data to buffer for ingestion in bytes").Default("104857600").IntVar(&ingestionBuffer)
-
+	basePath := app.Flag("storage.path", "Directory path to create and fill the data store under.").Default("data").String()
+	ingestionBuffer := app.Flag("prefiller.buffer-size", "Amount of data to buffer for ingestion in bytes").Default("104857600").Int()
 	logLevel := app.Flag("log.level", "Logging level").Default("info").String()
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
@@ -57,21 +37,21 @@ func realMain() int {
 		log.Fatalln("invalid --log-level")
 	}
 
-	log.Infoln("Prefilling into", cfgMemoryStorage.PersistenceStoragePath)
-	localStorage := local.NewMemorySeriesStorage(&cfgMemoryStorage)
+	log.Infoln("Prefilling into", *basePath)
+	//localStorage := local.NewMemorySeriesStorage(&cfgMemoryStorage)
+	//sampleAppender := localStorage
 
-	sampleAppender := localStorage
-
-	log.Infoln("Starting the storage engine")
-	if err := localStorage.Start(); err != nil {
-		log.Errorln("Error opening memory series storage:", err)
-		return 1
+	persistEngine, err := local.NewPersistence(*basePath,
+		false, false, func() bool {return false}, 0)
+	if err != nil {
+		log.Fatalln("Could not initialize persistence:", err)
 	}
-	defer func() {
-		if err := localStorage.Stop(); err != nil {
-			log.Errorln("Error stopping storage:", err)
-		}
-	}()
+
+	//defer func() {
+	//	if err := localStorage.Stop(); err != nil {
+	//		log.Errorln("Error stopping storage:", err)
+	//	}
+	//}()
 
 	// Ingest samples line-by-line from stdin.
 	rdr := bufio.NewScanner(os.Stdin)
@@ -104,10 +84,10 @@ func realMain() int {
 
 		log.Debugln("Ingested", len(decSamples), "metrics")
 
-		for sampleAppender.NeedsThrottling() {
-			log.Debugln("Waiting 100ms for appender to be ready for more data")
-			time.Sleep(time.Millisecond * 100)
-		}
+		//for sampleAppender.NeedsThrottling() {
+		//	log.Debugln("Waiting 100ms for appender to be ready for more data")
+		//	time.Sleep(time.Millisecond * 100)
+		//}
 
 		var (
 			numOutOfOrder = 0
@@ -115,6 +95,8 @@ func realMain() int {
 		)
 
 		for _, s := range model.Samples(decSamples) {
+			rawFP := s.Metric.FastFingerprint()
+			
 			if err := sampleAppender.Append(s); err != nil {
 				switch err {
 				case local.ErrOutOfOrderSample:
