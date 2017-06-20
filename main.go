@@ -77,10 +77,13 @@ func realMain() int {
 	rdr := bufio.NewScanner(os.Stdin)
 	for {
 		inpBuf := new(bytes.Buffer)
+		if !rdr.Scan() {
+			break
+		}
 		for rdr.Scan() {
 			inpBuf.Write(append(rdr.Bytes(), '\n'))
 			if inpBuf.Len() >= ingestionBuffer {
-				log.Infoln("Ingestion buffer full: flushing to Prometheus")
+				log.Infoln("Ingestion buffer full: flushing", inpBuf.Len())
 				break
 			}
 		}
