@@ -45,7 +45,7 @@ func (c *cmdMixin) fromStruct(clause *CmdClause, v interface{}) error { // nolin
 		var action Action
 		onMethodName := "On" + strings.ToUpper(ft.Name[0:1]) + ft.Name[1:]
 		if actionMethod := urv.MethodByName(onMethodName); actionMethod.IsValid() {
-			action, _ = actionMethod.Interface().(func(element *ParseElement, context *ParseContext) error)
+			action, _ = actionMethod.Interface().(func(*Application, *ParseElement, *ParseContext) error)
 		}
 
 		if field.Kind() == reflect.Struct {
@@ -174,7 +174,7 @@ func (c *cmdMixin) fromStruct(clause *CmdClause, v interface{}) error { // nolin
 					case reflect.Uint:
 						clause.UintsVar(ptr.(*[]uint))
 					case reflect.Uint8:
-						clause.Uint8ListVar(ptr.(*[]uint8))
+						clause.HexBytesVar(ptr.(*[]byte))
 					case reflect.Uint16:
 						clause.Uint16ListVar(ptr.(*[]uint16))
 					case reflect.Uint32:

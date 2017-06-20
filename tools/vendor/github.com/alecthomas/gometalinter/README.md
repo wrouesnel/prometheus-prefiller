@@ -42,11 +42,14 @@ It is intended for use with editor/IDE integration.
 ## Editor integration
 
 - [SublimeLinter plugin](https://github.com/alecthomas/SublimeLinter-contrib-gometalinter).
-- [vim-go](https://github.com/fatih/vim-go) with the `:GoMetaLinter` command.
-- [syntastic (vim)](https://github.com/scrooloose/syntastic/wiki/Go:---gometalinter) `let g:syntastic_go_checkers = ['gometalinter']`
 - [Atom go-plus package](https://atom.io/packages/go-plus).
 - [Emacs Flycheck checker](https://github.com/favadi/flycheck-gometalinter).
 - [Go for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=lukehoban.Go).
+- Vim/Neovim
+    - [Neomake](https://github.com/neomake/neomake).
+    - [Syntastic](https://github.com/scrooloose/syntastic/wiki/Go:---gometalinter) `let g:syntastic_go_checkers = ['gometalinter']`.
+    - [ale](https://github.com/w0rp/ale) `let g:ale_linters = {'go': ['gometalinter']}`
+    - [vim-go](https://github.com/fatih/vim-go) with the `:GoMetaLinter` command.
 
 ## Supported linters
 
@@ -306,7 +309,7 @@ stutter.go:16:6:warning: exported type PublicUndocumented should have comment or
 ## Checkstyle XML format
 
 `gometalinter` supports [checkstyle](http://checkstyle.sourceforge.net/)
-compatible XML output format. It is tiggered with `--checkstyle` flag:
+compatible XML output format. It is triggered with `--checkstyle` flag:
 
 	gometalinter --checkstyle
 

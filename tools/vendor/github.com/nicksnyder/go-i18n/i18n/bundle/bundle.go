@@ -2,15 +2,18 @@
 package bundle
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
 	"sync"
+	"unicode"
 
 	"github.com/nicksnyder/go-i18n/i18n/language"
 	"github.com/nicksnyder/go-i18n/i18n/translation"
+	toml "github.com/pelletier/go-toml"
 	"gopkg.in/yaml.v2"
 )
 
@@ -78,12 +81,29 @@ func (b *Bundle) ParseTranslationFileBytes(filename string, buf []byte) error {
 }
 
 func parseTranslations(filename string, buf []byte) ([]translation.Translation, error) {
-	if buf == nil || len(buf) == 0 {
+	if len(buf) == 0 {
 		return []translation.Translation{}, nil
 	}
 
 	ext := filepath.Ext(filename)
 
+	// `github.com/pelletier/go-toml` lacks an Unmarshal function,
+	// so we should parse TOML separately.
+	if ext == ".toml" {
+		tree, err := toml.LoadReader(bytes.NewReader(buf))
+		if err != nil {
+			return nil, err
+		}
+
+		m := make(map[string]map[string]interface{})
+		for k, v := range tree.ToMap() {
+			m[k] = v.(map[string]interface{})
+		}
+
+		return parseFlatFormat(m)
+	}
+
+	// Then parse other formats.
 	if isStandardFormat(ext, buf) {
 		var standardFormat []map[string]interface{}
 		if err := unmarshal(ext, buf, &standardFormat); err != nil {
@@ -100,11 +120,39 @@ func parseTranslations(filename string, buf []byte) ([]translation.Translation, 
 }
 
 func isStandardFormat(ext string, buf []byte) bool {
+	buf = deleteLeadingComments(ext, buf)
 	firstRune := rune(buf[0])
-	if (ext == ".json" && firstRune == '[') || (ext == ".yaml" && firstRune == '-') {
-		return true
+	return (ext == ".json" && firstRune == '[') || (ext == ".yaml" && firstRune == '-')
+}
+
+// deleteLeadingComments deletes leading newlines and comments in buf.
+// It only works for ext == ".yaml".
+func deleteLeadingComments(ext string, buf []byte) []byte {
+	if ext != ".yaml" {
+		return buf
 	}
-	return false
+
+	for {
+		buf = bytes.TrimLeftFunc(buf, unicode.IsSpace)
+		if buf[0] == '#' {
+			buf = deleteLine(buf)
+		} else {
+			break
+		}
+	}
+
+	return buf
+}
+
+func deleteLine(buf []byte) []byte {
+	index := bytes.IndexRune(buf, '\n')
+	if index == -1 { // If there is only one line without newline ...
+		return nil // ... delete it and return nothing.
+	}
+	if index == len(buf)-1 { // If there is only one line with newline ...
+		return nil // ... do the same as above.
+	}
+	return buf[index+1:]
 }
 
 // unmarshal finds an appropriate unmarshal function for ext
@@ -115,9 +163,9 @@ func unmarshal(ext string, buf []byte, out interface{}) error {
 		return json.Unmarshal(buf, out)
 	case ".yaml":
 		return yaml.Unmarshal(buf, out)
-	default:
-		return fmt.Errorf("unsupported file extension %v", ext)
 	}
+
+	return fmt.Errorf("unsupported file extension %v", ext)
 }
 
 func parseStandardFormat(data []map[string]interface{}) ([]translation.Translation, error) {

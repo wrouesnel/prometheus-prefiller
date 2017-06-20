@@ -1,2 +1,4 @@
-/gocovmerge
-/gometalinter
+/pkg
+/bin
+/tools.deps
+/metatools.deps

@@ -97,27 +97,27 @@ func (s *sortedIssues) Less(i, j int) bool {
 	for _, key := range s.order {
 		switch key {
 		case "path":
-			if l.Path >= r.Path {
+			if l.Path > r.Path {
 				return false
 			}
 		case "line":
-			if l.Line >= r.Line {
+			if l.Line > r.Line {
 				return false
 			}
 		case "column":
-			if l.Col >= r.Col {
+			if l.Col > r.Col {
 				return false
 			}
 		case "severity":
-			if l.Severity >= r.Severity {
+			if l.Severity > r.Severity {
 				return false
 			}
 		case "message":
-			if l.Message >= r.Message {
+			if l.Message > r.Message {
 				return false
 			}
 		case "linter":
-			if l.Linter.Name >= r.Linter.Name {
+			if l.Linter.Name > r.Linter.Name {
 				return false
 			}
 		}
@@ -155,7 +155,7 @@ func init() {
 	kingpin.Flag("dupl-threshold", "Minimum token sequence as a clone for dupl.").PlaceHolder("50").IntVar(&config.DuplThreshold)
 	kingpin.Flag("sort", fmt.Sprintf("Sort output by any of %s.", strings.Join(sortKeys, ", "))).PlaceHolder("none").EnumsVar(&config.Sort, sortKeys...)
 	kingpin.Flag("tests", "Include test files for linters that support this option").Short('t').BoolVar(&config.Test)
-	kingpin.Flag("deadline", "Cancel linters if they have not completed within this duration.").PlaceHolder("5s").DurationVar(&config.Deadline)
+	kingpin.Flag("deadline", "Cancel linters if they have not completed within this duration.").PlaceHolder("30s").DurationVar(&config.Deadline)
 	kingpin.Flag("errors", "Only show errors.").BoolVar(&config.Errors)
 	kingpin.Flag("json", "Generate structured JSON rather than standard line-based output.").BoolVar(&config.JSON)
 	kingpin.Flag("checkstyle", "Generate checkstyle XML rather than standard line-based output.").BoolVar(&config.Checkstyle)
@@ -164,7 +164,7 @@ func init() {
 	kingpin.CommandLine.GetFlag("help").Short('h')
 }
 
-func loadConfig(element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
+func loadConfig(app *kingpin.Application, element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
 	r, err := os.Open(*element.Value)
 	if err != nil {
 		return err
@@ -188,26 +188,28 @@ func loadConfig(element *kingpin.ParseElement, ctx *kingpin.ParseContext) error 
 	return err
 }
 
-func disableAction(element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
-	for i, linter := range config.Enable {
-		if linter == *element.Value {
-			config.Enable = append(config.Enable[:i], config.Enable[i+1:]...)
+func disableAction(app *kingpin.Application, element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
+	out := []string{}
+	for _, linter := range config.Enable {
+		if linter != *element.Value {
+			out = append(out, linter)
 		}
 	}
+	config.Enable = out
 	return nil
 }
 
-func enableAction(element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
+func enableAction(app *kingpin.Application, element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
 	config.Enable = append(config.Enable, *element.Value)
 	return nil
 }
 
-func disableAllAction(element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
+func disableAllAction(app *kingpin.Application, element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
 	config.Enable = []string{}
 	return nil
 }
 
-func enableAllAction(element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
+func enableAllAction(app *kingpin.Application, element *kingpin.ParseElement, ctx *kingpin.ParseContext) error {
 	for linter := range linterDefinitions {
 		config.Enable = append(config.Enable, linter)
 	}
@@ -725,6 +727,11 @@ func executeLinter(state *linterState) error {
 func (l *linterState) fixPath(path string) string {
 	lpath := strings.TrimSuffix(l.path, "...")
 	labspath, _ := filepath.Abs(lpath)
+
+	if !l.ShouldChdir() {
+		path = strings.TrimPrefix(path, lpath)
+	}
+
 	if !filepath.IsAbs(path) {
 		path, _ = filepath.Abs(filepath.Join(labspath, path))
 	}
@@ -738,6 +745,9 @@ func lintersFromFlags() map[string]*Linter {
 	out := map[string]*Linter{}
 	for _, linter := range config.Enable {
 		out[linter] = LinterFromName(linter)
+	}
+	for _, linter := range config.Disable {
+		delete(out, linter)
 	}
 	if config.Fast {
 		for _, linter := range slowLinters {
@@ -837,7 +847,23 @@ func getGoPath() string {
 	return path
 }
 
-// Add all "bin" directories from GOPATH to PATH, as well as GOBIN if set.
+// addPath appends p to paths and returns it if:
+// 1. p is not a blank string
+// 2. p doesn't already exist in paths
+// Otherwise paths is returned unchanged.
+func addPath(p string, paths []string) []string {
+	if p == "" {
+		return paths
+	}
+	for _, path := range paths {
+		if p == path {
+			return paths
+		}
+	}
+	return append(paths, p)
+}
+
+// Ensure all "bin" directories from GOPATH exists in PATH, as well as GOBIN if set.
 func configureEnvironment() {
 	gopaths := strings.Split(getGoPath(), string(os.PathListSeparator))
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
@@ -858,11 +884,9 @@ func configureEnvironment() {
 	}
 
 	for _, p := range gopaths {
-		paths = append(paths, filepath.Join(p, "bin"))
+		paths = addPath(filepath.Join(p, "bin"), paths)
 	}
-	if gobin != "" {
-		paths = append([]string{gobin}, paths...)
-	}
+	paths = addPath(gobin, paths)
 
 	path := strings.Join(paths, string(os.PathListSeparator))
 	gopath := strings.Join(gopaths, string(os.PathListSeparator))

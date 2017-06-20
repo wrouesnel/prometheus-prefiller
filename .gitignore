@@ -1,9 +1,9 @@
-.coverage
-cover.out
-prometheus-prefiller
+/.coverage
+/cover.out
+/prometheus-prefiller
 
-.idea
+/.idea
 
 # default data directory
-data
-prometheus.yml
+/data
+/prometheus.yml
