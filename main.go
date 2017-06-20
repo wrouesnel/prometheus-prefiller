@@ -102,6 +102,8 @@ func realMain() int {
 			continue
 		}
 
+		log.Debugln("Ingested", len(decSamples), "metrics")
+
 		for sampleAppender.NeedsThrottling() {
 			log.Debugln("Waiting 100ms for appender to be ready for more data")
 			time.Sleep(time.Millisecond * 100)
