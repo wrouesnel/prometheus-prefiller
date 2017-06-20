@@ -20,12 +20,14 @@ all: style lint test $(BINARY).x86_64
 $(BINARY).x86_64: $(GO_SRC)
 	CGO_ENABLED=0 go build -a -ldflags "-extldflags '-static' -X main.Version=$(VERSION)" -o $(BINARY).x86_64 .
 
+binary: $(BINARY).x86_64
+
 style: tools
 	gometalinter --disable-all --enable=gofmt --vendor
 
 lint: tools
 	@echo Using $(CONCURRENT_LINTERS) processes
-	gometalinter -j $(CONCURRENT_LINTERS) --deadline=$(LINTER_DEADLINE) --disable=gotype $(GO_DIRS)
+	gometalinter -j $(CONCURRENT_LINTERS) --deadline=$(LINTER_DEADLINE) --disable=gotype --disable=gocyclo $(GO_DIRS)
 
 fmt: tools
 	gofmt -s -w $(GO_SRC)
@@ -41,4 +43,4 @@ test: tools
 tools:
 	$(MAKE) -C $(TOOLDIR)
 
-.PHONY: tools style fmt test all
+.PHONY: tools style fmt test binary all 

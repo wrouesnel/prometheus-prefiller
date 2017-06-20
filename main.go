@@ -29,12 +29,15 @@ func realMain() int {
 		MaxChunksToPersist: 1024,
 		//PersistenceStoragePath:
 		//PersistenceRetentionPeriod:
-		CheckpointInterval:         time.Second,
-		CheckpointDirtySeriesLimit: 1,
+		//CheckpointInterval:         time.Minute*30,
+		//CheckpointDirtySeriesLimit: 10000,
 		Dirty:          true,
 		PedanticChecks: true,
 		SyncStrategy:   local.Always,
 	}
+
+	// Number of bytes to read before doing a sample append (approx)
+	var ingestionBuffer int
 
 	app := kingpin.New("prometheus-prefill", "command line utility to manually fill a prometheus data store")
 	app.Version(Version)
@@ -42,10 +45,17 @@ func realMain() int {
 	app.Flag("storage.path", "Directory path to create and fill the data store under.").Default("data").StringVar(&cfgMemoryStorage.PersistenceStoragePath)
 	app.Flag("storage.retention-period", "Period of time to store data for").Default("360h").DurationVar(&cfgMemoryStorage.PersistenceRetentionPeriod)
 
+	app.Flag("storage.checkpoint-interval", "Period of time to store data for").Default("30m").DurationVar(&cfgMemoryStorage.CheckpointInterval)
+	app.Flag("storage.checkpoint-dirty-series-limit", "Period of time to store data for").Default("10000").IntVar(&cfgMemoryStorage.CheckpointDirtySeriesLimit)
+
+	app.Flag("prefiller.buffer-size", "Amount of data to buffer for ingestion in bytes").Default("104857600").IntVar(&ingestionBuffer)
+
 	logLevel := app.Flag("log.level", "Logging level").Default("info").String()
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
-	flag.Set("log.level", *logLevel)
+	if err := flag.Set("log.level", *logLevel); err != nil {
+		log.Fatalln("invalid --log-level")
+	}
 
 	log.Infoln("Prefilling into", cfgMemoryStorage.PersistenceStoragePath)
 	localStorage := local.NewMemorySeriesStorage(&cfgMemoryStorage)
@@ -65,11 +75,18 @@ func realMain() int {
 
 	// Ingest samples line-by-line from stdin.
 	rdr := bufio.NewScanner(os.Stdin)
-	for rdr.Scan() {
-		bufLine := bytes.NewBuffer(append(rdr.Bytes(), '\n'))
-		// Parse the line as a text sample
+	for {
+		inpBuf := new(bytes.Buffer)
+		for rdr.Scan() {
+			inpBuf.Write(append(rdr.Bytes(), '\n'))
+			if inpBuf.Len() >= ingestionBuffer {
+				log.Infoln("Ingestion buffer full: flushing to Prometheus")
+				break
+			}
+		}
+
 		sdec := expfmt.SampleDecoder{
-			Dec: expfmt.NewDecoder(bufLine, expfmt.FmtText),
+			Dec: expfmt.NewDecoder(inpBuf, expfmt.FmtText),
 			Opts: &expfmt.DecodeOptions{
 				Timestamp: model.Now(),
 			},
@@ -81,10 +98,6 @@ func realMain() int {
 			log.Errorln("Could not decode metric:", err)
 			continue
 		}
-
-		log.With("labelname", decSamples[0].Metric.String()).
-			With("value", decSamples[0].Value.String()).
-			With("timestamp", decSamples[0].Timestamp.Time().String()).Debugln("Decoded metric")
 
 		for sampleAppender.NeedsThrottling() {
 			log.Debugln("Waiting 100ms for appender to be ready for more data")
