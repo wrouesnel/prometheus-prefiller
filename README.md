@@ -2,7 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/wrouesnel/prometheus-prefiller/badge.svg?branch=master)](https://coveralls.io/github/wrouesnel/prometheus-prefiller?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wrouesnel/prometheus-prefiller)](https://goreportcard.com/report/github.com/wrouesnel/prometheus-prefiller)
 
-**DEPRECATTED** : this was a proof-of-concept hacked together quite quickly, and had some pretty serious performance issues when dealing with a lot of metrics. Use https://github.com/Cleafy/promqueen for a much better solution.
+**DEPRECATED** : this was a proof-of-concept hacked together quite quickly, and had some pretty serious performance issues when dealing with a lot of metrics. Use https://github.com/Cleafy/promqueen for a much better solution.
 
 # Prometheus Prefiller
 
